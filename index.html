@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Camp Chaos: Puzzle Derby</title>
+  <title>Camp Clash</title>
   <style>
     :root {
       --bg: #f7edd2;
@@ -325,6 +325,75 @@
       transform: rotate(-2deg);
     }
 
+
+    .brand-lockup {
+      position: relative;
+      display: inline-block;
+      padding: 8px 0;
+    }
+    .brand-lockup::before {
+      content: "";
+      position: absolute;
+      left: -18px;
+      top: 4px;
+      width: 42px;
+      height: 42px;
+      background: #ffdf2e;
+      border: 6px solid #111827;
+      border-radius: 57% 43% 49% 51% / 44% 59% 41% 56%;
+      transform: rotate(-14deg);
+      z-index: -1;
+    }
+    .brand-lockup::after {
+      content: "";
+      position: absolute;
+      right: -34px;
+      bottom: 8px;
+      width: 58px;
+      height: 18px;
+      background: #e63946;
+      border: 5px solid #111827;
+      border-radius: 999px;
+      transform: rotate(-8deg);
+      z-index: -1;
+    }
+    .brand-subtitle {
+      display: inline-flex;
+      margin-top: 10px;
+      padding: 8px 13px;
+      border: 4px solid #111827;
+      border-radius: 999px;
+      background: #67e8f9;
+      color: #071022;
+      font-size: clamp(14px, 2vw, 18px);
+      font-weight: 1000;
+      letter-spacing: .06em;
+      box-shadow: 6px 6px 0 rgba(17,24,39,.28);
+    }
+    .splash-name {
+      margin: 0 0 4px;
+      font-size: 52px;
+      line-height: .9;
+      letter-spacing: -1px;
+      color: #fef08a;
+      text-shadow: 4px 4px 0 #111827;
+    }
+    .clash-burst {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 112px;
+      height: 112px;
+      margin: 0 auto 14px;
+      border-radius: 53% 47% 59% 41% / 48% 58% 42% 52%;
+      background: radial-gradient(circle at 30% 25%, #fff7ad 0 18%, #facc15 19% 45%, #ef4444 46% 100%);
+      border: 7px solid #111827;
+      color: #111827;
+      font-size: 50px;
+      box-shadow: 9px 9px 0 rgba(17,24,39,.35);
+      transform: rotate(-7deg);
+    }
+
     @media (max-width: 980px) {
       .layout, .game-area { grid-template-columns: 1fr; }
       .board { width: min(92vw, 480px); }
@@ -340,11 +409,11 @@
   <main>
     <header>
       <div>
-        <div class="badge">🎺 Miró-ish Mariachi Puzzle Battler</div>
-        <h1><span class="grad">Camp Chaos</span><small>Puzzle Derby</small></h1>
+        <div class="badge">🎺 Camp Clash Arcade Prototype</div>
+        <h1 class="brand-lockup"><span class="grad">Camp Clash</span></h1><div class="brand-subtitle">fast camp puzzle rumble</div>
       </div>
       <div class="actions">
-        <button id="newGame">▶ New Derby</button>
+        <button id="newGame">▶ New Clash</button>
         <button id="pauseGame" class="secondary">▶ Resume</button>
         <button id="musicBtn" class="music-pill">🎺 Music Off</button>
       </div>
@@ -358,6 +427,8 @@
             <div class="stats">
               <div class="stat"><div class="label">Score</div><div id="score" class="value">🏆 0</div></div>
               <div class="stat"><div class="label">Chain</div><div id="combo" class="value">⚡ x0</div></div>
+              <div class="stat"><div class="label">Level</div><div id="level" class="value">🟢 1</div></div>
+              <div class="stat"><div class="label">Power-Ups</div><div id="powerups" class="value">💥 0</div></div>
             </div>
             <div class="meterbox">
               <div class="meter-label"><span>Your Camp</span><span id="campPct">0%</span></div>
@@ -372,7 +443,7 @@
             </div>
             <div class="announcer">
               <div class="label">Camp Announcer</div>
-              <p id="message">Welcome to Camp Chaos! Match 3+ camp icons while the mariachi band serenades the snack table.</p>
+              <p id="message">Welcome to Camp Clash! Match camp icons while the mariachi band serenades the snack table.</p>
             </div>
           </div>
         </div>
@@ -406,8 +477,9 @@
 
   <div id="overlay" class="overlay">
     <div class="modal">
-      <div class="camp-icon">🏕️</div>
-      <h2>Derby Complete!</h2>
+      <div class="clash-burst">⚡</div>
+      <h2 class="splash-name">Camp Clash!</h2>
+      <h2>Round Complete</h2>
       <p id="endMessage"></p>
       <div id="finalScore" class="final-score">Final Score: 0</div>
       <button id="playAgain">Play Again</button>
@@ -437,6 +509,7 @@
 
   const el = (id) => document.getElementById(id);
   const boardEl = el("board"), nextGridEl = el("nextGrid"), legendEl = el("legend"), overlayEl = el("overlay");
+  let difficultyLevel = 1;
   const state = {
     grid: makeEmptyGrid(),
     piece: newPiece(),
@@ -444,13 +517,15 @@
     score: 0,
     combo: 0,
     chaos: 0,
+    difficulty: 1,
+    powerupsUsed: 0,
     eventProgress: 0,
     rival: 0,
     running: false,
     gameOver: false,
     dropTimer: null,
     rivalTimer: null,
-    message: "Welcome to Camp Chaos! Match 3+ camp icons while the mariachi band serenades the snack table."
+    message: "Welcome to Camp Clash! Match camp icons while the mariachi band serenades the snack table."
   };
 
   let audioCtx = null;
@@ -497,6 +572,16 @@
     osc.start(start);
     osc.stop(start + 0.11);
   }
+
+  function playCampClashCue() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime + 0.02;
+    playTrumpet(midiToHz(67), now, 0.14);
+    playTrumpet(midiToHz(72), now + 0.15, 0.16);
+    playTrumpet(midiToHz(76), now + 0.31, 0.22);
+    playPerc(now + 0.48, "kick");
+  }
+
   function musicTick() {
     if (!audioCtx || !musicOn) return;
     const now = audioCtx.currentTime + 0.03;
@@ -535,17 +620,48 @@
     else startMusic();
   }
 
+  function playPowerSound(type) {
+    ensureAudio();
+    const now = audioCtx.currentTime;
+    if (type === "boom") {
+      playTone(130, now, 0.22, "square", 0.12);
+      playTone(58, now, 0.36, "sawtooth", 0.08);
+      playPerc(now + 0.03, "kick");
+      playTrumpet(523.25, now + 0.08, 0.12);
+    } else if (type === "burn") {
+      playTone(360, now, 0.10, "triangle", 0.06);
+      playTone(260, now + 0.08, 0.12, "triangle", 0.05);
+      playTone(190, now + 0.16, 0.14, "sawtooth", 0.04);
+    } else if (type === "splash") {
+      playTone(520, now, 0.08, "sine", 0.06);
+      playTone(410, now + 0.06, 0.12, "triangle", 0.05);
+      playTone(300, now + 0.12, 0.14, "sine", 0.04);
+    } else if (type === "zap") {
+      playTone(760, now, 0.07, "square", 0.07);
+      playTone(980, now + 0.07, 0.07, "square", 0.055);
+      playTone(1220, now + 0.14, 0.08, "square", 0.045);
+    } else if (type === "level") {
+      playTrumpet(392, now, 0.16);
+      playTrumpet(523.25, now + 0.12, 0.16);
+      playTrumpet(659.25, now + 0.24, 0.22);
+    }
+  }
+
 
   function randTile() { return TILE_TYPES[Math.floor(Math.random() * TILE_TYPES.length)].id; }
   function makeEmptyGrid() { return Array.from({ length: H }, () => Array.from({ length: W }, () => null)); }
-  function newPiece() { return { x: Math.floor(W / 2), y: 0, a: randTile(), b: randTile(), vertical: true }; }
+  function newPiece() {
+    if (difficultyLevel === 1) return { x: Math.floor(W / 2), y: 0, a: randTile(), b: null, vertical: true };
+    return { x: Math.floor(W / 2), y: 0, a: randTile(), b: randTile(), vertical: true };
+  }
   function meta(id) { return TILE_TYPES.find(t => t.id === id) || TILE_TYPES[0]; }
   function cloneGrid(grid) { return grid.map(row => row.slice()); }
   function cellsFor(piece) {
-    return [
-      { x: piece.x, y: piece.y, id: piece.a },
-      piece.vertical ? { x: piece.x, y: piece.y - 1, id: piece.b } : { x: piece.x + 1, y: piece.y, id: piece.b }
-    ];
+    const cells = [{ x: piece.x, y: piece.y, id: piece.a }];
+    if (piece.b) {
+      cells.push(piece.vertical ? { x: piece.x, y: piece.y - 1, id: piece.b } : { x: piece.x + 1, y: piece.y, id: piece.b });
+    }
+    return cells;
   }
   function isValid(grid, piece) {
     return cellsFor(piece).every(c => {
@@ -656,6 +772,9 @@
     nextGridEl.innerHTML = tileHTML(state.next.a) + tileHTML(state.next.b);
     el("score").textContent = `🏆 ${state.score}`;
     el("combo").textContent = `⚡ x${state.combo}`;
+    const levelIcon = state.difficulty === 1 ? "🟢" : state.difficulty === 2 ? "🟡" : "🔴";
+    el("level").textContent = `${levelIcon} ${state.difficulty}`;
+    el("powerups").textContent = `💥 ${state.powerupsUsed}`;
     el("campPct").textContent = `${Math.round(state.eventProgress)}%`;
     el("rivalPct").textContent = `${Math.round(state.rival)}%`;
     el("campFill").style.width = `${state.eventProgress}%`;
@@ -675,24 +794,30 @@
     state.dropTimer = null;
     state.rivalTimer = null;
     if (state.running && !state.gameOver) {
-      const dropMs = Math.max(260, DROP_MS_BASE - Math.floor(state.score / 220) * 35);
+      const base = DROP_MS_BASE - Math.floor(state.score / 220) * 35;
+      const difficultyMultiplier = [1.22, 1, 0.78][state.difficulty - 1];
+      const dropMs = Math.max(175, base * difficultyMultiplier);
       state.dropTimer = setInterval(tick, dropMs);
       state.rivalTimer = setInterval(rivalTick, 950);
     }
   }
   function startNew() {
     startMusic();
+    playCampClashCue();
+    state.difficulty = 1;
+    difficultyLevel = 1;
     state.grid = makeEmptyGrid();
     state.piece = newPiece();
     state.next = newPiece();
     state.score = 0;
     state.combo = 0;
     state.chaos = 0;
+    state.powerupsUsed = 0;
     state.eventProgress = 0;
     state.rival = 0;
     state.running = true;
     state.gameOver = false;
-    state.message = "Derby started! The trumpets are hot, the shapes are weird, and the marshmallows are moving.";
+    state.message = "Derby started on Easy: single blocks first. Match fast to unlock harder camp chaos!";
     resetTimers();
     render();
   }
@@ -708,13 +833,55 @@
       state.score += resolved.score;
       state.eventProgress = Math.min(100, state.eventProgress + progress);
       state.chaos = Math.min(100, state.chaos + chaosGain);
+      if (resolved.chains > 1) playPowerSound("zap");
     } else {
       state.combo = 0;
     }
     state.grid = resolved.grid;
+
+    if (resolved.bestRun >= 5) {
+      state.grid = state.grid.map(row => row.map(cell => Math.random() < 0.22 ? null : cell));
+      state.powerupsUsed++;
+      state.score += 175;
+      state.message = "💥 MEGA CLEAR! Five-in-a-row shook the whole campground!";
+      playPowerSound("boom");
+      shake();
+    } else if (resolved.lastType === "fire" && resolved.totalCleared >= 4) {
+      state.grid = state.grid.map(row => row.map(cell => cell === "bug" ? null : cell));
+      state.powerupsUsed++;
+      state.score += 100;
+      state.message = "🔥 Campfire Sweep! Every bug tile ran for the lake!";
+      playPowerSound("burn");
+    } else if (resolved.lastType === "fish" && resolved.totalCleared >= 4) {
+      state.rival = Math.max(0, state.rival - 18);
+      state.powerupsUsed++;
+      state.score += 90;
+      state.message = "🌊 Fish Splash! Rival Camp slipped right off the dock!";
+      playPowerSound("splash");
+    } else if (resolved.lastType === "drum" && resolved.totalCleared >= 4) {
+      state.chaos = Math.min(100, state.chaos + 30);
+      state.powerupsUsed++;
+      state.score += 90;
+      state.message = "🥁 Drum Solo! Chaos meter got a ridiculous rhythm boost!";
+      playPowerSound("zap");
+    }
+
+    if (state.score >= 550 && state.difficulty === 1) {
+      state.difficulty = 2;
+      difficultyLevel = 2;
+      state.message = "🟡 Level Up! Medium mode: double-block gear drops are now in play.";
+      playPowerSound("level");
+    }
+    if (state.score >= 1250 && state.difficulty === 2) {
+      state.difficulty = 3;
+      difficultyLevel = 3;
+      state.message = "🔴 EXTREME CAMP MODE! Faster drops, louder chaos, fewer dry socks.";
+      playPowerSound("level");
+    }
+
     state.piece = incoming;
     state.next = newPiece();
-    if (!isValid(state.grid, incoming)) endGame("Camp whistle blown! The gear pile reached maximum nonsense.");
+    if (!isValid(state.grid, incoming)) endGame("Clash whistle blown! The gear pile reached maximum nonsense.");
     if (state.score >= WIN_SCORE || state.eventProgress >= 100) endGame("Victory! Your camp wins the derby, the lake applauds, and the squirrel asks for a contract.");
     resetTimers();
     render();
@@ -771,6 +938,8 @@
     state.rival = Math.max(0, state.rival - 24);
     state.score += 150;
     state.message = "BUG BOMB! Rival camp is now arguing with a cloud of mosquitoes.";
+    state.powerupsUsed++;
+    playPowerSound("zap");
     shake();
     render();
   }
