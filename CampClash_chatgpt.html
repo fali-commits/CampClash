@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Camp Chaos: Puzzle Derby</title>
+  <style>
+    :root {
+      --bg: #f7edd2;
+      --panel: rgba(255,255,255,.10);
+      --panel2: rgba(15,23,42,.72);
+      --line: rgba(255,255,255,.16);
+      --text: #fff;
+      --muted: rgba(224,242,254,.72);
+      --cyan: #67e8f9;
+      --yellow: #fde047;
+      --pink: #f9a8d4;
+      --green: #86efac;
+      --red: #fb7185;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-family: ui-rounded, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 18% 12%, #fff4b8 0 7%, transparent 8%), radial-gradient(circle at 86% 18%, #e83d2f 0 8%, transparent 9%), linear-gradient(135deg, #f8e7bd 0%, #f3d97e 46%, #1d3557 47%, #0a1024 100%);
+      color: var(--text);
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 14% 22%, rgba(255,215,0,.72) 0 6%, transparent 7%),
+        radial-gradient(circle at 80% 14%, rgba(230,57,70,.72) 0 5%, transparent 6%),
+        radial-gradient(circle at 68% 76%, rgba(0,119,182,.60) 0 7%, transparent 8%),
+        radial-gradient(ellipse at 24% 82%, rgba(42,157,143,.65) 0 8%, transparent 9%),
+        linear-gradient(115deg, transparent 0 54%, rgba(2,6,23,.32) 55% 57%, transparent 58%),
+        linear-gradient(30deg, rgba(0,0,0,.12) 2px, transparent 3px);
+      background-size: auto, auto, auto, auto, auto, 34px 34px;
+      pointer-events: none;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .55;
+      background:
+        radial-gradient(circle at 10% 58%, #0b1025 0 7px, transparent 8px),
+        radial-gradient(circle at 72% 34%, #0b1025 0 5px, transparent 6px),
+        radial-gradient(circle at 88% 68%, #0b1025 0 9px, transparent 10px),
+        conic-gradient(from 20deg at 18% 43%, transparent 0 72deg, rgba(10,16,36,.8) 73deg 82deg, transparent 83deg),
+        conic-gradient(from 210deg at 78% 54%, transparent 0 76deg, rgba(10,16,36,.72) 77deg 88deg, transparent 89deg);
+      mix-blend-mode: multiply;
+    }
+    main {
+      position: relative;
+      z-index: 1;
+      width: min(1240px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 28px 0 34px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 18px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(103,232,249,.35);
+      background: rgba(103,232,249,.10);
+      color: #cffafe;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-weight: 900;
+      box-shadow: 0 12px 34px rgba(0,0,0,.24);
+    }
+    h1 {
+      margin: 12px 0 0;
+      font-size: clamp(42px, 7vw, 78px);
+      line-height: .88;
+      letter-spacing: -2px;
+    }
+    h1 .grad {
+      background: linear-gradient(90deg, #fef08a, #f9a8d4, #a5f3fc);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      display: block;
+    }
+    h1 small {
+      display: block;
+      margin-top: 8px;
+      font-size: clamp(24px, 4vw, 44px);
+      color: rgba(255,255,255,.9);
+    }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      border: 0;
+      border-radius: 18px;
+      padding: 13px 18px;
+      font: inherit;
+      font-weight: 1000;
+      cursor: pointer;
+      color: #071022;
+      background: linear-gradient(90deg, #34d399, #22d3ee);
+      box-shadow: 0 12px 28px rgba(0,0,0,.28);
+      transition: transform .08s, filter .18s, opacity .18s;
+      user-select: none;
+    }
+    button:hover { filter: brightness(1.08); }
+    button:active { transform: scale(.96); }
+    button.secondary { background: rgba(255,255,255,.16); color: white; border: 1px solid rgba(255,255,255,.14); }
+    button.hot { background: linear-gradient(90deg, #fde047, #fb7185); }
+    button.blue { background: #67e8f9; }
+    button:disabled { opacity: .42; cursor: not-allowed; transform: none; filter: none; }
+    .layout { display: grid; grid-template-columns: 1fr 390px; gap: 20px; }
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 32px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.36);
+      backdrop-filter: blur(18px);
+    }
+    .main-panel { padding: 22px; }
+    .game-area { display: grid; grid-template-columns: auto 1fr; gap: 20px; }
+    .board-shell {
+      background: rgba(2,6,23,.78);
+      border: 4px solid rgba(165,243,252,.30);
+      box-shadow: 0 0 40px rgba(34,211,238,.17);
+      border-radius: 30px;
+      padding: 12px;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 6px;
+      width: min(82vw, 430px);
+    }
+    .cell, .tile {
+      aspect-ratio: 1 / 1;
+      border-radius: 13px;
+    }
+    .cell {
+      border: 1px solid rgba(255,255,255,.06);
+      background: rgba(2,6,23,.48);
+    }
+    .tile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(18px, 3vw, 29px);
+      border: 2px solid rgba(255,255,255,.58);
+      box-shadow: inset 0 -6px 0 rgba(0,0,0,.24), 0 4px 10px rgba(0,0,0,.22);
+      animation: pop .13s ease-out;
+    }
+    @keyframes pop { from { transform: scale(.78) rotate(-7deg); } to { transform: scale(1) rotate(0); } }
+    .fish { background: linear-gradient(135deg, #7dd3fc, #2563eb); outline: 2px solid rgba(191,219,254,.85); }
+    .tent { background: linear-gradient(135deg, #86efac, #16a34a); outline: 2px solid rgba(187,247,208,.85); }
+    .drum { background: linear-gradient(135deg, #fdba74, #ef4444); outline: 2px solid rgba(254,215,170,.85); }
+    .bug { background: linear-gradient(135deg, #f0abfc, #9333ea); outline: 2px solid rgba(233,213,255,.85); }
+    .fire { background: linear-gradient(135deg, #fde047, #d97706); outline: 2px solid rgba(254,240,138,.85); }
+    .side { display: flex; flex-direction: column; gap: 16px; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat {
+      border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.10);
+      border-radius: 22px;
+      padding: 14px;
+      box-shadow: inset 0 0 22px rgba(255,255,255,.03);
+    }
+    .label { font-size: 11px; text-transform: uppercase; letter-spacing: .2em; color: var(--muted); font-weight: 900; }
+    .value { margin-top: 4px; font-size: 28px; font-weight: 1000; }
+    .meterbox { border: 1px solid rgba(255,255,255,.15); background: rgba(2,6,23,.40); border-radius: 26px; padding: 16px; }
+    .meter-label { display: flex; justify-content: space-between; margin: 0 0 8px; font-size: 12px; letter-spacing: .15em; text-transform: uppercase; color: rgba(255,255,255,.70); font-weight: 1000; }
+    .bar { height: 18px; border-radius: 999px; background: rgba(255,255,255,.10); overflow: hidden; margin-bottom: 13px; }
+    .fill { height: 100%; border-radius: 999px; width: 0; transition: width .2s ease; }
+    .campfill { background: linear-gradient(90deg, #bef264, #10b981); }
+    .rivalfill { background: linear-gradient(90deg, #fb7185, #c026d3); }
+    .chaosfill { background: linear-gradient(90deg, #fde047, #fb923c, #ec4899); }
+    .announcer { min-height: 94px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.10); border-radius: 26px; padding: 16px; }
+    .announcer p { margin: 8px 0 0; font-size: 18px; line-height: 1.25; font-weight: 1000; }
+    .right-panel { padding: 20px; }
+    .right-panel h2 { margin: 0 0 14px; font-size: 26px; }
+    .next-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px; border-radius: 24px; background: rgba(2,6,23,.50); }
+    .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; color: rgba(255,255,255,.78); }
+    .legend div, .control-row { background: rgba(255,255,255,.10); border-radius: 13px; padding: 10px 12px; }
+    .controls { display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: rgba(255,255,255,.80); }
+    .control-row { display: flex; justify-content: space-between; }
+    .touch { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .overlay {
+      position: fixed;
+      z-index: 10;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2,6,23,.76);
+      backdrop-filter: blur(8px);
+      padding: 18px;
+    }
+    .modal {
+      width: min(520px, 100%);
+      text-align: center;
+      border: 1px solid rgba(255,255,255,.20);
+      background: linear-gradient(135deg, #0f172a, #312e81);
+      border-radius: 32px;
+      padding: 28px;
+      box-shadow: 0 30px 90px rgba(0,0,0,.55);
+    }
+    .modal .camp-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 78px;
+      height: 78px;
+      margin: 0 auto 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #fef08a, #f472b6);
+      font-size: 38px;
+    }
+    .modal h2 { font-size: 42px; margin: 0; }
+    .modal p { color: rgba(255,255,255,.82); font-size: 18px; }
+    .final-score { margin: 18px 0; background: rgba(255,255,255,.10); padding: 16px; border-radius: 18px; font-size: 24px; font-weight: 1000; }
+    .shake { animation: shake .38s ease; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-7px); }
+      40% { transform: translateX(7px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+    }
+
+    .miro-shape {
+      position: fixed;
+      z-index: 0;
+      pointer-events: none;
+      filter: drop-shadow(0 12px 0 rgba(0,0,0,.14));
+    }
+    .miro-star {
+      left: 5vw;
+      top: 17vh;
+      width: 120px;
+      height: 120px;
+      background: #111827;
+      clip-path: polygon(50% 0,58% 37%,96% 22%,66% 49%,98% 70%,60% 64%,50% 100%,40% 64%,2% 70%,34% 49%,4% 22%,42% 37%);
+      transform: rotate(-18deg);
+    }
+    .miro-eye {
+      right: 5vw;
+      top: 38vh;
+      width: 180px;
+      height: 82px;
+      border: 10px solid #111827;
+      border-radius: 80% 35% 80% 35%;
+      background: #f8e7bd;
+      transform: rotate(18deg);
+    }
+    .miro-eye::after {
+      content: "";
+      position: absolute;
+      left: 68px;
+      top: 18px;
+      width: 28px;
+      height: 28px;
+      background: #e63946;
+      border: 8px solid #111827;
+      border-radius: 999px;
+    }
+    .miro-moon {
+      left: 73vw;
+      bottom: 8vh;
+      width: 110px;
+      height: 110px;
+      border-radius: 999px;
+      background: #ffd60a;
+      box-shadow: -30px 0 0 #f8e7bd inset;
+      transform: rotate(-32deg);
+    }
+    .miro-squiggle {
+      left: 7vw;
+      bottom: 9vh;
+      width: 210px;
+      height: 90px;
+      border-top: 12px solid #111827;
+      border-radius: 60% 35% 0 0;
+      transform: rotate(10deg);
+    }
+    .miro-squiggle::after {
+      content: "";
+      position: absolute;
+      left: 105px;
+      top: -23px;
+      width: 58px;
+      height: 58px;
+      border-radius: 999px;
+      background: #2a9d8f;
+      border: 8px solid #111827;
+    }
+    .music-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #111827;
+      color: #fff7cc;
+      border: 3px solid #fff7cc;
+    }
+    .panel, .board-shell, .modal, button, .badge, .stat, .meterbox, .announcer, .legend div, .control-row, .next-grid {
+      border-color: rgba(17,24,39,.62) !important;
+      box-shadow: 8px 9px 0 rgba(17,24,39,.28), 0 24px 70px rgba(0,0,0,.22);
+    }
+    .panel {
+      background: rgba(10,16,36,.82);
+    }
+    .tile {
+      border: 4px solid #111827;
+      border-radius: 42% 58% 45% 55% / 55% 42% 58% 45%;
+      transform: rotate(-2deg);
+    }
+
+    @media (max-width: 980px) {
+      .layout, .game-area { grid-template-columns: 1fr; }
+      .board { width: min(92vw, 480px); }
+      .board-shell { width: max-content; max-width: 100%; margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="miro-shape miro-star"></div>
+  <div class="miro-shape miro-eye"></div>
+  <div class="miro-shape miro-moon"></div>
+  <div class="miro-shape miro-squiggle"></div>
+  <main>
+    <header>
+      <div>
+        <div class="badge">🎺 Miró-ish Mariachi Puzzle Battler</div>
+        <h1><span class="grad">Camp Chaos</span><small>Puzzle Derby</small></h1>
+      </div>
+      <div class="actions">
+        <button id="newGame">▶ New Derby</button>
+        <button id="pauseGame" class="secondary">▶ Resume</button>
+        <button id="musicBtn" class="music-pill">🎺 Music Off</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <section id="gamePanel" class="panel main-panel">
+        <div class="game-area">
+          <div class="board-shell"><div id="board" class="board"></div></div>
+          <div class="side">
+            <div class="stats">
+              <div class="stat"><div class="label">Score</div><div id="score" class="value">🏆 0</div></div>
+              <div class="stat"><div class="label">Chain</div><div id="combo" class="value">⚡ x0</div></div>
+            </div>
+            <div class="meterbox">
+              <div class="meter-label"><span>Your Camp</span><span id="campPct">0%</span></div>
+              <div class="bar"><div id="campFill" class="fill campfill"></div></div>
+              <div class="meter-label"><span>Rival Ruckus</span><span id="rivalPct">0%</span></div>
+              <div class="bar"><div id="rivalFill" class="fill rivalfill"></div></div>
+            </div>
+            <div class="meterbox">
+              <div class="meter-label"><span>Chaos Meter</span><span>Bug Bomb</span></div>
+              <div class="bar"><div id="chaosFill" class="fill chaosfill"></div></div>
+              <button id="bugBomb" class="hot" style="width:100%;margin-top:8px">🦟 Launch Bug Bomb</button>
+            </div>
+            <div class="announcer">
+              <div class="label">Camp Announcer</div>
+              <p id="message">Welcome to Camp Chaos! Match 3+ camp icons while the mariachi band serenades the snack table.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="panel right-panel">
+          <h2>Next Gear Drop</h2>
+          <div id="nextGrid" class="next-grid"></div>
+          <div id="legend" class="legend"></div>
+        </section>
+        <section class="panel right-panel">
+          <h2>Controls</h2>
+          <div class="controls">
+            <div class="control-row"><span>Move</span><b>← / →</b></div>
+            <div class="control-row"><span>Soft drop</span><b>↓</b></div>
+            <div class="control-row"><span>Rotate</span><b>↑ or Z</b></div>
+            <div class="control-row"><span>Slam drop</span><b>Space / X</b></div>
+            <div class="control-row"><span>Pause</span><b>P</b></div>
+          </div>
+        </section>
+        <div class="touch">
+          <button id="rotateBtn" class="secondary">↻ Rotate</button>
+          <button id="dropBtn" class="blue">Drop</button>
+          <button id="leftBtn" class="secondary">Left</button>
+          <button id="rightBtn" class="secondary">Right</button>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <div id="overlay" class="overlay">
+    <div class="modal">
+      <div class="camp-icon">🏕️</div>
+      <h2>Derby Complete!</h2>
+      <p id="endMessage"></p>
+      <div id="finalScore" class="final-score">Final Score: 0</div>
+      <button id="playAgain">Play Again</button>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const W = 8, H = 12, DROP_MS_BASE = 720, WIN_SCORE = 1800;
+  const TILE_TYPES = [
+    { id: "fish", name: "Fish", emoji: "🎣" },
+    { id: "tent", name: "Tent", emoji: "⛺" },
+    { id: "drum", name: "Drum", emoji: "🥁" },
+    { id: "bug", name: "Bugs", emoji: "🦟" },
+    { id: "fire", name: "Fire", emoji: "🔥" },
+  ];
+  const QUIPS = [
+    "Mosquitoes have entered the chat.",
+    "A counselor yelled 'teamwork' and ran away.",
+    "Someone packed 47 marshmallows and zero socks.",
+    "The lake is mostly fish, mystery, and sunscreen.",
+    "Dad joke combo detected. Morale unstable.",
+    "A squirrel is now assistant coach.",
+    "Tent assembly speedrun: questionable but inspiring.",
+    "Big camp energy. Tiny attention span.",
+  ];
+
+  const el = (id) => document.getElementById(id);
+  const boardEl = el("board"), nextGridEl = el("nextGrid"), legendEl = el("legend"), overlayEl = el("overlay");
+  const state = {
+    grid: makeEmptyGrid(),
+    piece: newPiece(),
+    next: newPiece(),
+    score: 0,
+    combo: 0,
+    chaos: 0,
+    eventProgress: 0,
+    rival: 0,
+    running: false,
+    gameOver: false,
+    dropTimer: null,
+    rivalTimer: null,
+    message: "Welcome to Camp Chaos! Match 3+ camp icons while the mariachi band serenades the snack table."
+  };
+
+  let audioCtx = null;
+  let musicTimer = null;
+  let musicOn = false;
+  let step = 0;
+  const mariachiLead = [0, 4, 7, 12, 11, 7, 4, 0, 7, 9, 11, 14, 12, 7, 4, 0];
+  const mariachiBass = [0, 0, 7, 7, 5, 5, 7, 7, 0, 0, 7, 7, -5, -5, 7, 7];
+
+  function midiToHz(midi) {
+    return 440 * Math.pow(2, (midi - 69) / 12);
+  }
+  function playTone(freq, start, duration, type, gainValue) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(gainValue, start + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.03);
+  }
+  function playPluck(freq, start, duration) {
+    playTone(freq, start, duration, "triangle", 0.055);
+    playTone(freq * 2, start + 0.008, duration * 0.55, "square", 0.012);
+  }
+  function playTrumpet(freq, start, duration) {
+    playTone(freq, start, duration, "sawtooth", 0.045);
+    playTone(freq * 1.005, start, duration, "square", 0.018);
+  }
+  function playPerc(start, kind) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(kind === "kick" ? 92 : 260, start);
+    osc.frequency.exponentialRampToValueAtTime(kind === "kick" ? 48 : 120, start + 0.08);
+    gain.gain.setValueAtTime(kind === "kick" ? 0.05 : 0.025, start);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.09);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(start);
+    osc.stop(start + 0.11);
+  }
+  function musicTick() {
+    if (!audioCtx || !musicOn) return;
+    const now = audioCtx.currentTime + 0.03;
+    const root = 60;
+    const leadNote = root + mariachiLead[step % mariachiLead.length];
+    const bassNote = 43 + mariachiBass[step % mariachiBass.length];
+    const upbeat = step % 4;
+
+    playPluck(midiToHz(bassNote), now, 0.16);
+    if (upbeat === 1 || upbeat === 3) playPluck(midiToHz(root + 7), now + 0.04, 0.08);
+    if (step % 2 === 0) playTrumpet(midiToHz(leadNote), now + 0.02, 0.18);
+    if (step % 8 === 6) playTrumpet(midiToHz(leadNote + 5), now + 0.08, 0.15);
+    playPerc(now, step % 4 === 0 ? "kick" : "tick");
+    step += 1;
+  }
+  function ensureAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+  }
+  function startMusic() {
+    ensureAudio();
+    if (musicOn) return;
+    musicOn = true;
+    musicTick();
+    musicTimer = window.setInterval(musicTick, 185);
+    el("musicBtn").textContent = "🎺 Music On";
+  }
+  function stopMusic() {
+    musicOn = false;
+    if (musicTimer) window.clearInterval(musicTimer);
+    musicTimer = null;
+    el("musicBtn").textContent = "🎺 Music Off";
+  }
+  function toggleMusic() {
+    if (musicOn) stopMusic();
+    else startMusic();
+  }
+
+
+  function randTile() { return TILE_TYPES[Math.floor(Math.random() * TILE_TYPES.length)].id; }
+  function makeEmptyGrid() { return Array.from({ length: H }, () => Array.from({ length: W }, () => null)); }
+  function newPiece() { return { x: Math.floor(W / 2), y: 0, a: randTile(), b: randTile(), vertical: true }; }
+  function meta(id) { return TILE_TYPES.find(t => t.id === id) || TILE_TYPES[0]; }
+  function cloneGrid(grid) { return grid.map(row => row.slice()); }
+  function cellsFor(piece) {
+    return [
+      { x: piece.x, y: piece.y, id: piece.a },
+      piece.vertical ? { x: piece.x, y: piece.y - 1, id: piece.b } : { x: piece.x + 1, y: piece.y, id: piece.b }
+    ];
+  }
+  function isValid(grid, piece) {
+    return cellsFor(piece).every(c => {
+      if (c.x < 0 || c.x >= W || c.y >= H) return false;
+      if (c.y < 0) return true;
+      return !grid[c.y][c.x];
+    });
+  }
+  function lockPiece(grid, piece) {
+    const next = cloneGrid(grid);
+    cellsFor(piece).forEach(c => {
+      if (c.y >= 0 && c.y < H && c.x >= 0 && c.x < W) next[c.y][c.x] = c.id;
+    });
+    return next;
+  }
+  function applyGravity(grid) {
+    const next = makeEmptyGrid();
+    for (let x = 0; x < W; x++) {
+      let write = H - 1;
+      for (let y = H - 1; y >= 0; y--) {
+        if (grid[y][x]) next[write--][x] = grid[y][x];
+      }
+    }
+    return next;
+  }
+  function findMatches(grid) {
+    const marked = new Set(), runs = [];
+    for (let y = 0; y < H; y++) {
+      let x = 0;
+      while (x < W) {
+        const id = grid[y][x];
+        if (!id) { x++; continue; }
+        let end = x + 1;
+        while (end < W && grid[y][end] === id) end++;
+        if (end - x >= 3) {
+          const cells = [];
+          for (let i = x; i < end; i++) cells.push([y, i]);
+          runs.push({ id, cells });
+          cells.forEach(([yy, xx]) => marked.add(`${yy},${xx}`));
+        }
+        x = end;
+      }
+    }
+    for (let x = 0; x < W; x++) {
+      let y = 0;
+      while (y < H) {
+        const id = grid[y][x];
+        if (!id) { y++; continue; }
+        let end = y + 1;
+        while (end < H && grid[end][x] === id) end++;
+        if (end - y >= 3) {
+          const cells = [];
+          for (let i = y; i < end; i++) cells.push([i, x]);
+          runs.push({ id, cells });
+          cells.forEach(([yy, xx]) => marked.add(`${yy},${xx}`));
+        }
+        y = end;
+      }
+    }
+    return { marked, runs };
+  }
+  function resolveMatches(grid) {
+    let current = cloneGrid(grid);
+    let totalCleared = 0, score = 0, chains = 0, lastType = null, bestRun = 0;
+    for (let safety = 0; safety < 12; safety++) {
+      const { marked, runs } = findMatches(current);
+      if (!marked.size) break;
+      chains++;
+      const currentBest = runs.length ? Math.max(...runs.map(r => r.cells.length)) : 0;
+      bestRun = Math.max(bestRun, currentBest);
+      const typeCount = {};
+      marked.forEach(key => {
+        const [y, x] = key.split(",").map(Number);
+        const id = current[y][x];
+        if (id) typeCount[id] = (typeCount[id] || 0) + 1;
+        current[y][x] = null;
+        totalCleared++;
+      });
+      const sorted = Object.entries(typeCount).sort((a,b) => b[1] - a[1]);
+      lastType = sorted[0]?.[0] || lastType;
+      score += marked.size * 45 * chains + Math.max(0, currentBest - 3) * 40;
+      current = applyGravity(current);
+    }
+    return { grid: current, totalCleared, score, chains, lastType, bestRun };
+  }
+  function garbageRow(grid) {
+    const next = cloneGrid(grid);
+    next.shift();
+    const gap = Math.floor(Math.random() * W);
+    next.push(Array.from({ length: W }, (_, x) => x === gap ? null : randTile()));
+    return next;
+  }
+
+  function tileHTML(id) {
+    if (!id) return '<div class="cell"></div>';
+    const t = meta(id);
+    return `<div class="tile ${id}">${t.emoji}</div>`;
+  }
+  function displayGrid() {
+    const visible = cloneGrid(state.grid);
+    cellsFor(state.piece).forEach(c => {
+      if (c.y >= 0 && c.y < H && c.x >= 0 && c.x < W) visible[c.y][c.x] = c.id;
+    });
+    return visible;
+  }
+  function render() {
+    boardEl.innerHTML = displayGrid().flat().map(tileHTML).join("");
+    nextGridEl.innerHTML = tileHTML(state.next.a) + tileHTML(state.next.b);
+    el("score").textContent = `🏆 ${state.score}`;
+    el("combo").textContent = `⚡ x${state.combo}`;
+    el("campPct").textContent = `${Math.round(state.eventProgress)}%`;
+    el("rivalPct").textContent = `${Math.round(state.rival)}%`;
+    el("campFill").style.width = `${state.eventProgress}%`;
+    el("rivalFill").style.width = `${state.rival}%`;
+    el("chaosFill").style.width = `${state.chaos}%`;
+    el("message").textContent = state.message;
+    el("bugBomb").disabled = state.chaos < 100 || !state.running;
+    el("pauseGame").textContent = state.running ? "⏸ Pause" : "▶ Resume";
+    overlayEl.style.display = state.gameOver ? "flex" : "none";
+    el("endMessage").textContent = state.message;
+    el("finalScore").textContent = `Final Score: ${state.score}`;
+  }
+
+  function resetTimers() {
+    clearInterval(state.dropTimer);
+    clearInterval(state.rivalTimer);
+    state.dropTimer = null;
+    state.rivalTimer = null;
+    if (state.running && !state.gameOver) {
+      const dropMs = Math.max(260, DROP_MS_BASE - Math.floor(state.score / 220) * 35);
+      state.dropTimer = setInterval(tick, dropMs);
+      state.rivalTimer = setInterval(rivalTick, 950);
+    }
+  }
+  function startNew() {
+    startMusic();
+    state.grid = makeEmptyGrid();
+    state.piece = newPiece();
+    state.next = newPiece();
+    state.score = 0;
+    state.combo = 0;
+    state.chaos = 0;
+    state.eventProgress = 0;
+    state.rival = 0;
+    state.running = true;
+    state.gameOver = false;
+    state.message = "Derby started! The trumpets are hot, the shapes are weird, and the marshmallows are moving.";
+    resetTimers();
+    render();
+  }
+  function finishLock(locked) {
+    const resolved = resolveMatches(locked);
+    const incoming = state.next;
+    if (resolved.totalCleared > 0) {
+      const t = meta(resolved.lastType);
+      const progress = resolved.totalCleared * 3 + resolved.chains * 7;
+      const chaosGain = resolved.chains > 1 ? resolved.chains * 15 : Math.max(0, resolved.bestRun - 3) * 8;
+      state.message = `${t.emoji} ${t.name} combo! Cleared ${resolved.totalCleared}, chain x${resolved.chains}. ${QUIPS[Math.floor(Math.random() * QUIPS.length)]}`;
+      state.combo = resolved.chains;
+      state.score += resolved.score;
+      state.eventProgress = Math.min(100, state.eventProgress + progress);
+      state.chaos = Math.min(100, state.chaos + chaosGain);
+    } else {
+      state.combo = 0;
+    }
+    state.grid = resolved.grid;
+    state.piece = incoming;
+    state.next = newPiece();
+    if (!isValid(state.grid, incoming)) endGame("Camp whistle blown! The gear pile reached maximum nonsense.");
+    if (state.score >= WIN_SCORE || state.eventProgress >= 100) endGame("Victory! Your camp wins the derby, the lake applauds, and the squirrel asks for a contract.");
+    resetTimers();
+    render();
+  }
+  function tick() {
+    if (!state.running || state.gameOver) return;
+    const down = { ...state.piece, y: state.piece.y + 1 };
+    if (isValid(state.grid, down)) state.piece = down;
+    else finishLock(lockPiece(state.grid, state.piece));
+    render();
+  }
+  function rivalTick() {
+    if (!state.running || state.gameOver) return;
+    state.rival = Math.min(100, state.rival + 3.2 + state.score / 16000);
+    if (state.rival >= 100) endGame("Rival Camp Ruckus won the derby and replaced your trophies with wet socks.");
+    else if (state.rival >= 70) rivalSabotage();
+    render();
+  }
+  function rivalSabotage() {
+    state.grid = garbageRow(state.grid);
+    state.rival = Math.max(0, state.rival - 35);
+    state.message = "Rival sabotage! Muddy gear is rising from the bottom. Gross, but fair-ish.";
+    shake();
+  }
+  function endGame(msg) {
+    state.running = false;
+    state.gameOver = true;
+    state.message = msg;
+    clearInterval(state.dropTimer);
+    clearInterval(state.rivalTimer);
+  }
+  function move(dx) {
+    if (!state.running || state.gameOver) return;
+    const moved = { ...state.piece, x: state.piece.x + dx };
+    if (isValid(state.grid, moved)) state.piece = moved;
+    render();
+  }
+  function rotate() {
+    if (!state.running || state.gameOver) return;
+    const rotated = { ...state.piece, vertical: !state.piece.vertical };
+    if (isValid(state.grid, rotated)) state.piece = rotated;
+    else if (isValid(state.grid, { ...rotated, x: rotated.x - 1 })) state.piece = { ...rotated, x: rotated.x - 1 };
+    render();
+  }
+  function hardDrop() {
+    if (!state.running || state.gameOver) return;
+    let dropped = state.piece;
+    while (isValid(state.grid, { ...dropped, y: dropped.y + 1 })) dropped = { ...dropped, y: dropped.y + 1 };
+    finishLock(lockPiece(state.grid, dropped));
+  }
+  function useChaos() {
+    if (state.chaos < 100 || !state.running || state.gameOver) return;
+    state.chaos = 0;
+    state.rival = Math.max(0, state.rival - 24);
+    state.score += 150;
+    state.message = "BUG BOMB! Rival camp is now arguing with a cloud of mosquitoes.";
+    shake();
+    render();
+  }
+  function togglePause() {
+    if (state.gameOver) return;
+    state.running = !state.running;
+    resetTimers();
+    render();
+  }
+  function shake() {
+    const gp = el("gamePanel");
+    gp.classList.remove("shake");
+    void gp.offsetWidth;
+    gp.classList.add("shake");
+  }
+
+  document.addEventListener("keydown", (event) => {
+    const handled = ["ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp", " ", "z", "Z", "x", "X", "p", "P"];
+    if (handled.includes(event.key)) event.preventDefault();
+    if (event.key === "ArrowLeft") move(-1);
+    if (event.key === "ArrowRight") move(1);
+    if (event.key === "ArrowDown") tick();
+    if (event.key === "ArrowUp" || event.key === "z" || event.key === "Z") rotate();
+    if (event.key === " " || event.key === "x" || event.key === "X") hardDrop();
+    if (event.key === "p" || event.key === "P") togglePause();
+  }, { passive: false });
+
+  el("newGame").onclick = startNew;
+  el("playAgain").onclick = startNew;
+  el("pauseGame").onclick = togglePause;
+  el("musicBtn").onclick = toggleMusic;
+  el("bugBomb").onclick = useChaos;
+  el("rotateBtn").onclick = rotate;
+  el("dropBtn").onclick = hardDrop;
+  el("leftBtn").onclick = () => move(-1);
+  el("rightBtn").onclick = () => move(1);
+
+  legendEl.innerHTML = TILE_TYPES.map(t => `<div><span>${t.emoji}</span> ${t.name}</div>`).join("");
+  render();
+})();
+</script>
+</body>
+</html>
